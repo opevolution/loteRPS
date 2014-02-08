@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+	<data>
+		<record model="ir.ui.view" id="loterps_tree_view">
+			<field name="name">loterps.tree</field>
+			<field name="model">loterps</field>
+			<field name="arch" type="xml">
+				<tree string="Lote RPS">
+					<field name="name"/>
+				</tree>
+			</field>
+		</record>
+		
+		<record model="ir.actions.act_window" id="action_loterps_tree">
+			<field name="name">Lote RPS</field>
+			<field name="res_model">loterps</field>
+		</record>
+		
+		<menuitem name="Lote RPS" id="menu_loterps" action="action_loterps_tree" parent="account.menu_finance_periodical_processing"/>
+	</data>
+</openerp>

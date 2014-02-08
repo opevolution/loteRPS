@@ -1,0 +1,21 @@
+# -*- encoding: utf-8 -*-
+
+from osv import fields, osv
+
+class loterps(osv.osv):
+    _name ="loterps"
+    _description = "Lote de Recibo Provisorio de Servicos"
+    
+    _columns = {
+                'name' : fields.char(u'NÃºmero Recibo ProvisÃ³rio de ServiÃ§os', size=30, required=True),
+                'arquivo': fields.text('Arquivo'),
+                'invoice_ids' : fields.one2many('account.invoice','loterps_id','Lote RPS',readonly=True),
+                'data_criacao': fields.date(u'Data da CriaÃ§Ã£o'),
+                'data_envio': fields.date(u'Data da GeraÃ§Ã£o'),
+                'state': fields.selection([
+                    ('new','Novo'),
+                    ('cancel','Cancelada'),
+                    ('done','Gerada'),
+                    ], 'Status'),
+                }
+loterps()   
