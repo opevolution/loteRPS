@@ -7,10 +7,42 @@
 			<field name="arch" type="xml">
 				<tree string="Lote RPS">
 					<field name="name"/>
+					<field name="numero"/>
+					<field name="company_id"/>
+					<field name="state" string="Estado"/>
 				</tree>
 			</field>
 		</record>
 		
+		<record model="ir.ui.view" id="view_area_tecnica_form">
+			<field name="name">loterps.form</field>
+			<field name="model">loterps</field>
+			<field name="arch" type="xml">
+				<form string="Lote RPS" version="7.0">
+					
+	                <header>
+						<button name="emite_rps" string="Confirmar" type="object" class="oe_highlight"  attrs="{'invisible' : [('state','!=','draft')]}"/>
+						<button name="reemite_rps" string="Reemite" type="object" class="oe_highlight"  attrs="{'invisible' : [('state','!=','done')]}"/>
+						<field name="state" widget="statusbar" statusbar_visible="draft,done,cancel" statusbar_colors='{"draft":"blue","cancel":"red"}'/>
+	                </header>
+					<group col="4">
+						<group>
+							<field name="name"/>
+							<field name="company_id"/>
+						</group>
+						<group>						
+							<field name="data_in"/>
+							<field name="data_out"/>
+							<field name="numero"/>
+						</group>						
+					</group>
+					<group>
+						<field name="invoice_ids" widget="one2many_list"/>			
+					</group>					
+				</form>
+			</field>
+		</record>
+
 		<record model="ir.actions.act_window" id="action_loterps_tree">
 			<field name="name">Lote RPS</field>
 			<field name="res_model">loterps</field>

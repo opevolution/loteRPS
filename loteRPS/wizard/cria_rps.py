@@ -1,4 +1,4 @@
-# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 # Alexandre Defendi - Evoluir Informatica  - Open Evolution                    #
@@ -22,13 +22,47 @@
 # versao do arquivo: 0.0.1  04/02/2014                                         #
 ################################################################################
 
-from openerp.osv import orm, fields
+import logging
+from openerp.osv import fields, osv
+from datetime import date
+ 
+_logger = logging.getLogger(__name__)
+ 
+class cria_rps(osv.osv_memory):
+    _name = "cria.rps"
+    _description = "Gera RPS a Partir das Faturas"
 
-class account_invoice(orm.Model):
-    _inherit = 'account.invoice'
-    _order = "number asc"
     _columns = {
-               'loterps_id': fields.many2one('loterps', 'Lote RPS',),
-               }
+                'name': fields.char('nome',size=30,),
+                'state': fields.selection([('init', 'init'),
+                                           ('done', 'done')], 'state', readonly=True),
+        }
 
-account_invoice()
+    _defaults = {
+        'state': 'init',
+        }
+     
+    def gera_rps(self, cr, uid, ids, context=None):
+        if context is None:
+            context = {}
+             
+        obLoterps = self.pool.get('loterps')
+         
+        _logger.info("Inciando a Geração das RPS")
+  
+        LoteRPS = {
+                   'data_in'     : date.today(),
+                   }
+ 
+        loterps_id = obLoterps.create(cr, uid, LoteRPS, context)
+        #obLoterps.append(loterps_id)
+ 
+  
+        inv_obj = self.pool.get('account.invoice')
+        active_ids = context.get('active_ids',[])
+          
+        for id in active_ids:
+            inv_obj.write(cr, uid, [id], {'loterps_id': loterps_id})
+
+cria_rps()   
+    

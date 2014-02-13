@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+  <data>
+
+    <record model="ir.ui.view" id="view_rps_gerador_form">
+        <field name="name">cria.rps.form</field>
+        <field name="model">cria.rps</field>
+        <field name="arch" type="xml">
+			<form string="Confirm Draft Invoices" version="7.0">
+				<group>
+					<p class="oe_grey">
+					    Gera o lote de RPS (Recibo Provisório de Serviço)
+					    para ser enviado a NFS-e.
+					</p>
+					<field name="state" invisible="1" />
+				</group>
+			    <footer>
+			        <button icon="gtk-apply" string="Gerar" name="gera_rps" type="object" default_focus="1" class="oe_highlight"/>
+			        or
+			        <button string="Cancelar" class="oe_link" special="cancel"/>
+			    </footer>
+			</form>
+        </field>
+    </record>
+
+    <act_window id="wiz_rps_gerador"
+      key2="client_action_multi" name="Gerar RPS"
+      res_model="cria.rps" src_model="account.invoice"
+      view_id="view_rps_gerador_form"
+      view_mode="form" target="new" view_type="form"/>
+
+  </data>
+</openerp>

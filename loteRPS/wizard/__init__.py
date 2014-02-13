@@ -1,4 +1,4 @@
-# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 ################################################################################
 #                                                                              #
 # Alexandre Defendi - Evoluir Informatica  - Open Evolution                    #
@@ -22,13 +22,4 @@
 # versao do arquivo: 0.0.1  04/02/2014                                         #
 ################################################################################
 
-from openerp.osv import orm, fields
-
-class account_invoice(orm.Model):
-    _inherit = 'account.invoice'
-    _order = "number asc"
-    _columns = {
-               'loterps_id': fields.many2one('loterps', 'Lote RPS',),
-               }
-
-account_invoice()
+import cria_rps

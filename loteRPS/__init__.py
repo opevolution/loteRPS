@@ -22,3 +22,6 @@
 
 import loterps
 import account_invoice
+import res_company
+import partner
+import wizard
