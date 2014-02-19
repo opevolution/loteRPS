@@ -29,7 +29,6 @@ import time
 from lxml import etree
 from copy import deepcopy
 from osv import fields, osv
-from Crypto.Protocol.AllOrNothing import isInt
 
 CABECALHO_XML = '<?xml version="1.0"?>'
 
