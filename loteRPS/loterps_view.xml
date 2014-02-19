@@ -47,7 +47,9 @@
 			<field name="name">Lote RPS</field>
 			<field name="res_model">loterps</field>
 		</record>
+
+        <menuitem id="menu_sped_root" name="SPED" parent="account.menu_finance" sequence="14"/>
 		
-		<menuitem name="Lote RPS" id="menu_loterps" action="action_loterps_tree" parent="account.menu_finance_periodical_processing"/>
+		<menuitem name="Recibo Prov.Serv." id="menu_sped_loterps" action="action_loterps_tree" parent="menu_sped_root"/>
 	</data>
 </openerp>
