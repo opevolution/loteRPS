@@ -41,11 +41,8 @@ def somente_ascii(valor):
     '''
     
     ant = unicode(valor)
-    
     ret = unicodedata.normalize('NFD', ant).encode('ascii', 'ignore')
-    
     _logger.info("ASCII: "+str(ret))
-    
     return ret
 
 def converte_valor_xml(valor):

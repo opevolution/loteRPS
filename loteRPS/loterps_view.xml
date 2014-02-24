@@ -48,8 +48,6 @@
 			<field name="res_model">loterps</field>
 		</record>
 
-        <menuitem id="menu_sped_root" name="SPED" parent="account.menu_finance" sequence="14"/>
-		
 		<menuitem name="Recibo Prov.Serv." id="menu_sped_loterps" action="action_loterps_tree" parent="menu_sped_root"/>
 	</data>
 </openerp>

@@ -21,7 +21,7 @@
 ###############################################################################
 {   
     'name'          : 'Emissão de Lote de R.P.S. para a prefeitura de Curitiba/PR',
-    'version'       : '0.0.1',
+    'version'       : '0.002',
     'author'        : 'Alexandre Defendi @ Open Evoluir',
     'website'       : 'www.evoluirinformatica.com.br',
     'category'      : 'Account',
@@ -31,7 +31,8 @@ Emissão de Lote para importação de RPS na NFS-e da prefeitura de Curitiba
 02/02/2014         v.0.0.1 Alexandre Defendi  Versão Inicial do Projeto ''',
     'depends'       : ['l10n_br_account',],
     'init_xml'      : [],
-    'update_xml'    : ['loterps_view.xml',
+    'update_xml'    : ['root_menus.xml',
+                       'loterps_view.xml',
                        'res_company_view.xml',
                        'wizard/cria_rps_view.xml',
                        'partner_view.xml',

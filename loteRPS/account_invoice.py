@@ -27,6 +27,11 @@ from openerp.osv import orm, fields
 class account_invoice(orm.Model):
     _inherit = 'account.invoice'
     _order = "number asc"
+
+    def invoice_confirmada(self, cr, uid, ids, context=None):
+        self.write(cr, uid, ids, {'state':'sefaz_export'}, context=context)
+        return True
+
     _columns = {
                'loterps_id': fields.many2one('loterps', 'Lote RPS',),
                }
