@@ -83,28 +83,19 @@ class loterps(osv.osv):
 #         return self.pool.get('ir.sequence').create(cr, uid, seq)
 
 
-    def gera_id(self, cr, uid, id, context=None):
-        this = self.browse(cr, uid, id)
+    def gera_id(self, cr, uid, company, context=None):
         if context is None:
             context = {}
 
         res = False
-        if not this.company_id:
-            stErro = u'Selecione a empresa prestadora para poder emitir a RPS.'
-            raise osv.except_osv(
-                _('Error !'), ("Error Validating RPS:\n '%s'") % (stErro, ))
+
+        if not company.rps_sequence_id:
+            raise osv.except_osv(u'A RPS deve ter uma sequencia interna')
         else:
-            if Log:
-                _logger.info("Empresa ID: "+str(this.company_id.id))
-            empresa = self.pool.get('res.company').browse(cr, uid, this.company_id.id, context=context)
-            if not empresa.rps_sequence_id:
-                raise osv.except_osv(u'A RPS deve ter uma sequencia interna')
-            else:
-                if Log:
-                    _logger.info("Gerar a sequencia ID:"+str(empresa.rps_sequence_id.id))
-                obj_seq = self.pool.get('ir.sequence')
-                c = {}
-                res = obj_seq.next_by_id(cr, uid, empresa.rps_sequence_id.id, context=c)
+            _logger.info("Gerar a sequencia ID:"+str(company.rps_sequence_id.id))
+            obj_seq = self.pool.get('ir.sequence')
+            c = {}
+            res = obj_seq.next_by_id(cr, uid, company.rps_sequence_id.id, context=c)
                 
         return res    
     
@@ -120,7 +111,7 @@ class loterps(osv.osv):
                                                 }, context=context)
         return True
 
-    def gera_arquivo_xml(self, cr, uid, id, nrVlLote, context=None):
+    def gera_arquivo_xml(self, cr, uid, invoice_ids, nrLote, SeqId, context=None):
         """
         Função que gera o arquivo xml para exportar
         @param self: Ponteiro do Objeto
@@ -145,9 +136,9 @@ class loterps(osv.osv):
         var = {}
 
         if Log:
-            _logger.info("Numero Lote: "+str(nrVlLote))
+            _logger.info("Numero Lote: "+str(nrLote))
         try:
-            nrVlLote = int(nrVlLote)
+            nrVlLote = int(nrLote)
         except ValueError:
             nrVlLote = 0   
 #         if not isinstance( nrVlLote, ( int, long ) ):
@@ -155,9 +146,8 @@ class loterps(osv.osv):
 #                 _logger.info("Numero Lote nao é um inteiro")
 #             nrVlLote = 0
     
-        this = self.browse(cr, uid, id)
-          
-        empresa   = self.pool.get('res.company').browse(cr, uid, this.company_id.id, context=context)
+        [user]    = self.pool.get('res.users').browse(cr, uid, [uid]) 
+        empresa   = self.pool.get('res.company').browse(cr, uid, user.company_id.id, context=context)
         mypartner = self.pool.get('res.partner').browse(cr, uid, empresa.partner_id.id, context=context)
         
         MyCidadeCode = mypartner.l10n_br_city_id.state_id.ibge_code+mypartner.l10n_br_city_id.ibge_code
@@ -179,7 +169,7 @@ class loterps(osv.osv):
         InfRps     = etree.XML("<InfRps><DataEmissao/><NaturezaOperacao/><RegimeEspecialTributacao/><OptanteSimplesNacional/><IncentivadorCultural/><Status/></InfRps>")
         IdentRps   = etree.XML("<IdentificacaoRps><Numero/><Serie/><Tipo/></IdentificacaoRps>")
         Servico    = etree.XML("<Servico><ItemListaServico/><Discriminacao/><CodigoMunicipio/></Servico>")
-        ValServ    = etree.XML("<Valores><ValorServicos/><ValorDeducoes/><ValorPis/><ValorCofins/><ValorInss/><ValorIr/><ValorCsll/><IssRetido/><ValorIss/><ValorIssRetido/><OutrasRetencoes/><BaseCalculo/><ValorLiquidoNfse/><DescontoIncondicionado/><DescontoCondicionado/></Valores>")
+        ValServ    = etree.XML("<Valores><ValorServicos/><ValorDeducoes/><ValorPis/><ValorCofins/><ValorInss/><ValorIr/><ValorCsll/><IssRetido/><ValorIss/><ValorIssRetido/><Aliquota/><OutrasRetencoes/><BaseCalculo/><ValorLiquidoNfse/><DescontoIncondicionado/><DescontoCondicionado/></Valores>")
         Prestad    = etree.XML("<Prestador><Cnpj/><InscricaoMunicipal/></Prestador>")
         Tomador    = etree.XML("<Tomador><RazaoSocial/></Tomador>")
 
@@ -198,14 +188,14 @@ class loterps(osv.osv):
             _logger.info("1") 
         objInvoice = self.pool.get('account.invoice')
         if Log:
-            _logger.info("Invoice IDs:"+str(this.invoice_ids))
+            _logger.info("Invoice IDs:"+str(invoice_ids))
         qtdeRPS = 0
-        for invId in this.invoice_ids:
+        for invId in invoice_ids:
             qtdeRPS = qtdeRPS + 1     # acumula a quantidade de RPS lido
-            
+          
             if Log:
-                _logger.info("Invoice ID:"+str(invId.id))
-            invoice = objInvoice.browse(cr, uid, invId.id, context=context)    # browse  a fatura
+                _logger.info("Invoice ID:"+str(invId))
+            invoice = objInvoice.browse(cr, uid, invId, context=context)    # browse  a fatura
             if Log:
                 _logger.info(str(invoice.name))
              
@@ -228,6 +218,76 @@ class loterps(osv.osv):
             
             pFiscal  = self.pool.get('account.fiscal.position').browse(cr, uid, invoice.fiscal_position.id, context=context)
             
+            
+            vlServicoPrestado = round(LinhaInv.quantity * LinhaInv.price_unit, 2)
+            
+            vlDescontos = round(vlServicoPrestado * (LinhaInv.discount/100),2)
+            
+            vlDeducao = 0
+            
+            vlBase = vlServicoPrestado - vlDescontos
+            
+            alISSQN = 0
+            vlISSQN = 0
+            vlISSQNRet = 0
+            vlCSLL = 0
+            vlCSLLRet = 0
+            vlIR = 0
+            vlIRRet = 0
+            vlPIS = 0
+            vlPISRet = 0
+            vlCOFINS = 0
+            vlCOFINSRet = 0
+            
+            _logger.info("Linhas Taxas: "+str(invoice.tax_line))
+            
+            
+            for idLinhaImp in invoice.tax_line:
+                [LinhaImp] = self.pool.get('account.invoice.tax').browse(cr, uid, [idLinhaImp.id])
+                if vlTpFiscal == '2':
+                    _logger.info("Taxa: "+LinhaImp.name+" Valor"+str(LinhaImp.amount))
+                    if 'ISSQN' in LinhaImp.name:
+                        if LinhaImp.amount > 0:
+                            vlISSQN = vlISSQN + LinhaImp.amount
+                            alISSQN = round(vlISSQN / vlBase,2) * 100
+                        elif LinhaImp.amount < 0:
+                            vlISSQNRet = vlISSQNRet + LinhaImp.amount
+                    elif 'CSLL' in LinhaImp.name:
+                        if LinhaImp.amount > 0:
+                            vlCSLL = vlCSLL + LinhaImp.amount
+                        elif LinhaImp.amount < 0:
+                            vlCSLLRet = vlCSLLRet + (LinhaImp.amount * -1)
+                    elif 'IR' in LinhaImp.name:
+                        if LinhaImp.amount > 0:
+                            vlIR = vlIR + LinhaImp.amount
+                        elif LinhaImp.amount < 0:
+                            vlIRRet = vlIRRet + (LinhaImp.amount * -1)
+                    elif 'PIS' in LinhaImp.name:
+                        if LinhaImp.amount > 0:
+                            vlPIS = vlPIS + LinhaImp.amount
+                        elif LinhaImp.amount < 0:
+                            vlPISRet = vlPISRet + (LinhaImp.amount * -1)
+                    elif 'COFINS' in LinhaImp.name:
+                        if LinhaImp.amount > 0:
+                            vlCOFINS = vlCOFINS + LinhaImp.amount
+                        elif LinhaImp.amount < 0:
+                            vlCOFINSRet = vlCOFINSRet + (LinhaImp.amount * -1)
+                    
+            
+            _logger.info("vlServicoPrestado: "+str(vlServicoPrestado))
+            _logger.info("vlDescontos: "+str(vlDescontos))
+            _logger.info("vlBase: "+str(vlBase))
+
+            _logger.info("ISSQN: "+str(vlISSQN))
+            _logger.info("ISSQN Ret: "+str(vlISSQNRet))
+            _logger.info("CSLL: "+str(vlCSLL))
+            _logger.info("CSLL Ret: "+str(vlCSLLRet))
+            _logger.info("IR: "+str(vlIR))
+            _logger.info("IR Ret: "+str(vlIRRet))
+            _logger.info("PIS: "+str(vlPIS))
+            _logger.info("PIS Ret: "+str(vlPISRet))
+            _logger.info("COFINS: "+str(vlCOFINS))
+            _logger.info("COFINS Ret: "+str(vlCOFINSRet))
             
             cpRps    = deepcopy(Rps)
             cpInfRps = deepcopy(InfRps)
@@ -252,9 +312,22 @@ class loterps(osv.osv):
                     'Status'                    : '1',
                     } 
             preenche(cpInfRps, cpInfNFSE)
+
+            idNFSE = False
+            
+            if SeqId:
+                _logger.info('Seq ID: '+str(SeqId.id))
+                if not invoice.nro_nfse:
+                    obj_seq = self.pool.get('ir.sequence')
+                    c = {}
+                    idNFSE = obj_seq.next_by_id(cr, uid, SeqId.id, context=c)
+                    objInvoice.write(cr, uid, invoice.id, {'nro_nfse': idNFSE}, context=context)
+            
+            if idNFSE == False:
+                idNFSE = invoice.nro_nfse
             
             cpIdentNFSE = {
-                           'Numero': invoice.internal_number or '',
+                           'Numero': idNFSE,
                            'Serie': '',
                            'Tipo': '1',
                            }
@@ -269,22 +342,31 @@ class loterps(osv.osv):
 
             preenche(cpServico, cpServicoNFSE)
 
-
+            if vlISSQNRet > 0:
+                vlISSQN = vlISSQNRet
+                tpISS = 1
+            else:
+                alISSQN = 0
+                tpISS = 2
+            
+            OutrasRet = vlPISRet+vlCOFINSRet+vlIRRet+vlCSLLRet
+            
             cpValServNFSE = {
-                           'ValorServicos': converte_valor_xml(LinhaInv.price_subtotal),
+                           'ValorServicos': converte_valor_xml(vlServicoPrestado),
                            'ValorDeducoes': '0.00',
-                           'ValorPis': '0.00',
-                           'ValorCofins': '0.00',
+                           'ValorPis': converte_valor_xml(vlPIS),
+                           'ValorCofins': converte_valor_xml(vlCOFINS),
                            'ValorInss': '0.00',
-                           'ValorIr': '0.00',
-                           'ValorCsll': '0.00',
-                           'IssRetido': '1', #1 - Tetido na Fonte / 2 - Não Retido na Fonte
-                           'ValorIss': '0.00',
-                           'ValorIssRetido': '0.00',
-                           'OutrasRetencoes': '0.00',
-                           'BaseCalculo': '0.00',
-                           'ValorLiquidoNfse': converte_valor_xml(LinhaInv.price_total),
-                           'DescontoIncondicionado': converte_valor_xml(LinhaInv.discount_value),
+                           'ValorIr': converte_valor_xml(vlIR),
+                           'ValorCsll': converte_valor_xml(vlCSLL),
+                           'IssRetido': tpISS, #1 - Retido na Fonte / 2 - Não Retido na Fonte
+                           'ValorIss': converte_valor_xml(vlISSQN),
+                           'ValorIssRetido': converte_valor_xml(vlISSQNRet),
+                           'Aliquota': alISSQN,
+                           'OutrasRetencoes': converte_valor_xml(OutrasRet),
+                           'BaseCalculo': converte_valor_xml(vlBase),
+                           'ValorLiquidoNfse': converte_valor_xml(vlBase-(OutrasRet+vlISSQNRet)),
+                           'DescontoIncondicionado': converte_valor_xml(vlDescontos),
                            'DescontoCondicionado': '0.00',
                            }
 
@@ -356,11 +438,11 @@ class loterps(osv.osv):
         res = {'arquivo': CABECALHO_XML + etree.tostring(EnviarLote)}
         return res
         
-    def gera_rps(self, cr, uid, id, nrLote, context=None):
+    def gera_rps(self, cr, uid, invoice_ids, nrLote, SeqId=None, context=None):
         if context is None:
             context = {}
 
-        rps = self.gera_arquivo_xml(cr, uid, id, nrLote, context)
+        rps = self.gera_arquivo_xml(cr, uid, invoice_ids, nrLote, SeqId, context)
         rps['nome'] ='RPS_L'+nrLote+'_'+time.strftime('%Y%m%d_%H%M%S')+'.xml'
         rps['lote'] ='RPS_L'+nrLote
         return rps
@@ -375,33 +457,71 @@ class loterps(osv.osv):
         for id in ids:
             this = self.browse(cr, uid, id)
             nrLote = this.numero
-            rps = self.gera_rps(cr, uid, id, nrLote, context)
+            invoice_ids = []
+            for invId in  this.invoice_ids:
+                invoice_ids.append(invId.id)
+            rps = self.gera_rps(cr, uid, invoice_ids, nrLote, context=context)
             self.write(cr, uid, ids, {'data_out': time.strftime('%Y-%m-%d')}, context=context)
             self.anexarRps(cr,uid,id,rps['arquivo'],rps['nome'])
-        
         return False
 
     def emite_rps(self, cr, uid, ids, context=None):
         """Confirma o Processamento do Contrato"""
-        if Log:
-            _logger.info("contract_confirm")
+        serie_pool = self.pool.get('l10n_br_account.document.serie')
+        
+        _logger.info("contract_confirm")
         if context is None:
             context = {}
+        
+        [user] = self.pool.get('res.users').browse(cr, uid, [uid])
+        
+        [company] = self.pool.get('res.company').browse(cr, user.id, [user.company_id.id])
+                
+        serie_id = serie_pool.search(cr, uid, [('code','=','NFS'),('company_id','=',user.company_id.id)])[0]
+        _logger.info("Series IDS: "+str(serie_id))
+        
+        if not serie_id:
+            raise osv.except_osv(_('warning'), _('Informe uma série para emitir NFS-e, nas configurações da empresa'))
+            return False
+        else:
+            [serie] = serie_pool.browse(cr, uid, [serie_id])
+            if not serie.internal_sequence_id:
+                raise osv.except_osv(_('warning'), _('Crie uma sequencia para poder exportar RPS.'))
+                return False
+            else:
+                SeqId = serie.internal_sequence_id
+        
+        _logger.info("Sequencia ID: "+str(SeqId))
+        
+        for id in ids:
+            this = self.browse(cr, uid, id)
+            result = self.verifica_rps(cr, uid, this.invoice_ids, context)
+            if result == False:
+                return False
         
         for id in ids:
             this = self.browse(cr, uid, id)
             if this.numero:
                 nrLote = this.numero
             else:
-                nrLote = self.gera_id(cr, uid, id, context)
+                nrLote = self.gera_id(cr, uid, company, context)
                 self.write(cr, uid, ids, {'name': 'RPS_L'+nrLote, 'numero': str(nrLote)}, context=context)
-            rps = self.gera_rps(cr, uid, id, nrLote, context)
-            self.write(cr, uid, ids, {'data_out': time.strftime('%Y-%m-%d')}, context=context)
+                
+            rps = self.gera_rps(cr, uid, id, nrLote, SeqId, context)
             self.anexarRps(cr,uid,id,rps['arquivo'],rps['nome'])
-        
-        return self.write(cr, uid, ids, {'state':'done'}, context=context)
+                
+            self.write(cr, uid, [id], {'data_out': time.strftime('%Y-%m-%d'), 'state':'done'}, context=context)
+        return True
 
-    def verifica_rps(self, cr, uid, id, context=None):
+    def verifica_rps(self, cr, uid, invoice_ids, context=None):
+#         for invoice in self.pool.get('account.invoice').browse(cr, uid, invoice_ids):
+#             _logger.info("Verificando RPS")
+#             if invoice.state != 'sefaz_export':
+#                 _logger.info("não é sefaz_export: "+str(invoice.state))
+#                 return False
+#             elif invoice.nro_nfse and invoice.nro_nfse > 0:
+#                 _logger.info("Já foi emitida")
+#                 return False
         return True
 
     _columns = {

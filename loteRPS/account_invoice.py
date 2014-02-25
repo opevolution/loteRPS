@@ -33,7 +33,8 @@ class account_invoice(orm.Model):
         return True
 
     _columns = {
-               'loterps_id': fields.many2one('loterps', 'Lote RPS',),
+                'nro_nfse': fields.integer('Nro. NFS-e'),
+                'loterps_id': fields.many2one('loterps', 'Lote RPS',),
                }
 
 account_invoice()

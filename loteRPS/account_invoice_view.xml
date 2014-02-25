@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+	<data>
+
+		<record model="ir.ui.view" id="view_lote_rps_account_invoice_form">
+			<field name="name">lote_RPS_account.invoice.form</field>
+			<field name="model">account.invoice</field>
+			<field name="inherit_id" ref="l10n_br_account.view_l10n_br_account_invoice_form" />
+			<field name="arch" type="xml">
+				<field position="after" name="internal_number">
+					<field name="nro_nfse"  attrs="{'invisible': [('fiscal_type','=','product')]}" />
+				</field>
+				<!-- <xpath expr="/form/sheet/notebook/page[@string='tax_line']/field[@name='tax_line']/tree/field[@name='name']" position="after">
+					<field name="tax_code_id"/>
+				</xpath>  -->
+			</field>
+		</record>
+
+	</data>
+
+</openerp>
