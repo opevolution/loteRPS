@@ -28,7 +28,7 @@ from openerp.osv import fields, osv
 from datetime import date
 from tools.translate import _
 from openerp import netsvc
-
+from openerp.tools.translate import _
  
 _logger = logging.getLogger(__name__)
  
@@ -44,7 +44,7 @@ class cria_rps(osv.osv_memory):
         }
 
     _defaults = {
-        'state': 'init',
+                 'state': 'init',
         }
      
     def gera_rps(self, cr, uid, ids, context=None):
@@ -61,8 +61,8 @@ class cria_rps(osv.osv_memory):
 
         result = obLoterps.verifica_rps(cr, uid, active_ids, context)
         
-        if not result:
-            raise osv.except_osv(_('warning'), _(u'Você selecionou alguma fatura que não esta aberta ou já foi emitida.'))
+        if result:
+            raise osv.except_osv(_('warning'), _(result))
             return False 
 
         _logger.info("Inciando a Geração das RPS")
@@ -107,7 +107,7 @@ class cria_rps(osv.osv_memory):
       
             for id in active_ids:
                 inv_obj.write(cr, uid, [id], {'loterps_id': loterps_id})
-                #wf_service.trg_validate(uid, 'account.invoice', id, 'invoice_open', cr)
+                wf_service.trg_validate(uid, 'account.invoice', id, 'invoice_open', cr)
             c={}
             #encoded_result = base64.b64encode(rps['arquivo'])
 

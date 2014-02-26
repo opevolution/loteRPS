@@ -22,6 +22,7 @@
 # versao do arquivo: 0.0.1  04/02/2014                                         #
 ################################################################################
 
+import locale
 import logging
 import base64
 import unicodedata
@@ -29,6 +30,7 @@ import time
 from lxml import etree
 from copy import deepcopy
 from osv import fields, osv
+from openerp.tools.translate import _
 
 CABECALHO_XML = '<?xml version="1.0"?>'
 
@@ -40,8 +42,13 @@ def somente_ascii(valor):
     Usado como decorator para a nota fiscal eletrônica de servicos
     '''
     
-    ant = unicode(valor)
-    ret = unicodedata.normalize('NFD', ant).encode('ascii', 'ignore')
+    if not isinstance(valor, unicode):
+        _logger.info('Não é um unicode!')
+        ret = unicodedata.normalize('NFD', unicode(valor)).encode('ascii', 'ignore')
+    else:
+        ret = unicodedata.normalize('NFD', valor).encode('ascii', 'ignore')
+        _logger.info('É um unicode!')
+    
     _logger.info("ASCII: "+str(ret))
     return ret
 
@@ -90,7 +97,7 @@ class loterps(osv.osv):
         res = False
 
         if not company.rps_sequence_id:
-            raise osv.except_osv(u'A RPS deve ter uma sequencia interna')
+            raise osv.except_osv(_('warning'), _(u'A RPS deve ter uma sequencia interna')) 
         else:
             _logger.info("Gerar a sequencia ID:"+str(company.rps_sequence_id.id))
             obj_seq = self.pool.get('ir.sequence')
@@ -135,7 +142,9 @@ class loterps(osv.osv):
          
         var = {}
 
+
         if Log:
+            _logger.info("locale"+str(locale.getlocale()))
             _logger.info("Numero Lote: "+str(nrLote))
         try:
             nrVlLote = int(nrLote)
@@ -208,8 +217,8 @@ class loterps(osv.osv):
             if Log:
                 _logger.info("Servico ID: "+str(ServId.id))
             ServInv = self.pool.get('product.product').browse(cr, uid, ServId.id, context=context)
-            if Log:
-                _logger.info("Servico: "+str(ServId.name))
+#            if Log:
+#                _logger.info("Servico: "+str(ServId.name))
            
             iTpServ = self.pool.get('l10n_br_account.service.type').browse(cr, uid, ServInv.service_type_id.id, context=context)
            
@@ -273,21 +282,21 @@ class loterps(osv.osv):
                         elif LinhaImp.amount < 0:
                             vlCOFINSRet = vlCOFINSRet + (LinhaImp.amount * -1)
                     
-            
-            _logger.info("vlServicoPrestado: "+str(vlServicoPrestado))
-            _logger.info("vlDescontos: "+str(vlDescontos))
-            _logger.info("vlBase: "+str(vlBase))
-
-            _logger.info("ISSQN: "+str(vlISSQN))
-            _logger.info("ISSQN Ret: "+str(vlISSQNRet))
-            _logger.info("CSLL: "+str(vlCSLL))
-            _logger.info("CSLL Ret: "+str(vlCSLLRet))
-            _logger.info("IR: "+str(vlIR))
-            _logger.info("IR Ret: "+str(vlIRRet))
-            _logger.info("PIS: "+str(vlPIS))
-            _logger.info("PIS Ret: "+str(vlPISRet))
-            _logger.info("COFINS: "+str(vlCOFINS))
-            _logger.info("COFINS Ret: "+str(vlCOFINSRet))
+            if Log == True:
+                _logger.info("vlServicoPrestado: "+str(vlServicoPrestado))
+                _logger.info("vlDescontos: "+str(vlDescontos))
+                _logger.info("vlBase: "+str(vlBase))
+    
+                _logger.info("ISSQN: "+str(vlISSQN))
+                _logger.info("ISSQN Ret: "+str(vlISSQNRet))
+                _logger.info("CSLL: "+str(vlCSLL))
+                _logger.info("CSLL Ret: "+str(vlCSLLRet))
+                _logger.info("IR: "+str(vlIR))
+                _logger.info("IR Ret: "+str(vlIRRet))
+                _logger.info("PIS: "+str(vlPIS))
+                _logger.info("PIS Ret: "+str(vlPISRet))
+                _logger.info("COFINS: "+str(vlCOFINS))
+                _logger.info("COFINS Ret: "+str(vlCOFINSRet))
             
             cpRps    = deepcopy(Rps)
             cpInfRps = deepcopy(InfRps)
@@ -335,8 +344,8 @@ class loterps(osv.osv):
             preenche(cpIdentRps, cpIdentNFSE)
 
             cpServicoNFSE = {
-                           'ItemListaServico': str(iTpServ.code or ''),
-                           'Discriminacao':  somente_ascii(str(ServId.name or '')),
+                           'ItemListaServico': iTpServ.code or '',
+                           'Discriminacao':  somente_ascii(ServId.name or ''),
                            'CodigoMunicipio': MyCidadeCode,
                            }
 
@@ -354,11 +363,11 @@ class loterps(osv.osv):
             cpValServNFSE = {
                            'ValorServicos': converte_valor_xml(vlServicoPrestado),
                            'ValorDeducoes': '0.00',
-                           'ValorPis': converte_valor_xml(vlPIS),
-                           'ValorCofins': converte_valor_xml(vlCOFINS),
+                           'ValorPis': converte_valor_xml(vlPISRet),
+                           'ValorCofins': converte_valor_xml(vlCOFINSRet),
                            'ValorInss': '0.00',
-                           'ValorIr': converte_valor_xml(vlIR),
-                           'ValorCsll': converte_valor_xml(vlCSLL),
+                           'ValorIr': converte_valor_xml(vlIRRet),
+                           'ValorCsll': converte_valor_xml(vlCSLLRet),
                            'IssRetido': tpISS, #1 - Retido na Fonte / 2 - Não Retido na Fonte
                            'ValorIss': converte_valor_xml(vlISSQN),
                            'ValorIssRetido': converte_valor_xml(vlISSQNRet),
@@ -373,23 +382,23 @@ class loterps(osv.osv):
             preenche(cpValServ, cpValServNFSE)
 
             cpPrestadNFSE = {
-                           'Cnpj': limpa_cnpj_cpf(str(mypartner.cnpj_cpf or '')),
-                           'InscricaoMunicipal': str(mypartner.inscr_mun or ''),
+                           'Cnpj': limpa_cnpj_cpf(mypartner.cnpj_cpf or ''),
+                           'InscricaoMunicipal': mypartner.inscr_mun or '',
                            }
 
             preenche(cpPrestad, cpPrestadNFSE)
 
             cpTomadorNFSE = {
-                           'RazaoSocial': somente_ascii(str(partner.legal_name or '')),
+                           'RazaoSocial': somente_ascii(partner.legal_name or ''),
                            }
 
             preenche(cpTomador, cpTomadorNFSE)
 
             cpEndTomaNFSE = {
-                           'Endereco': somente_ascii(str(partner.street or '')),
+                           'Endereco': somente_ascii(partner.street or ''),
                            'Numero': partner.number or '',
-                           'Complemento': somente_ascii(str(partner.street2 or '')),
-                           'Bairro': somente_ascii(str(partner.district or '')),
+                           'Complemento': somente_ascii(partner.street2 or ''),
+                           'Bairro': somente_ascii(partner.district or ''),
                            'CodigoMunicipio': CidadeCode,
                            'Uf': partner.l10n_br_city_id.state_id.code or '',
                            'Cep': str(partner.zip or '').replace("-",""),
@@ -399,11 +408,11 @@ class loterps(osv.osv):
 
             if partner.is_company:
                 cpCNPTomaNFSE = {
-                               'Cnpj': limpa_cnpj_cpf(str(partner.cnpj_cpf or '')),
+                               'Cnpj': limpa_cnpj_cpf(partner.cnpj_cpf or ''),
                                }
             else:
                 cpCNPTomaNFSE = {
-                               'Cpf': limpa_cnpj_cpf(str(partner.cnpj_cpf or '')),
+                               'Cpf': limpa_cnpj_cpf(partner.cnpj_cpf or ''),
                                }
 
             preenche(cpCNPToma, cpCNPTomaNFSE)
@@ -428,8 +437,8 @@ class loterps(osv.osv):
             ListaRps.append( cpRps )
  
         var['NumeroLote'] = str(nrVlLote)
-        var['Cnpj'] = str(mypartner.cnpj_cpf or '')
-        var['InscricaoMunicipal'] = str(mypartner.inscr_mun or '') 
+        var['Cnpj'] = mypartner.cnpj_cpf or ''
+        var['InscricaoMunicipal'] = mypartner.inscr_mun or '' 
         var['QuantidadeRps'] = str(qtdeRPS)
         preenche(loteRps, var)
  
@@ -514,15 +523,43 @@ class loterps(osv.osv):
         return True
 
     def verifica_rps(self, cr, uid, invoice_ids, context=None):
-#         for invoice in self.pool.get('account.invoice').browse(cr, uid, invoice_ids):
-#             _logger.info("Verificando RPS")
-#             if invoice.state != 'sefaz_export':
-#                 _logger.info("não é sefaz_export: "+str(invoice.state))
-#                 return False
-#             elif invoice.nro_nfse and invoice.nro_nfse > 0:
-#                 _logger.info("Já foi emitida")
-#                 return False
-        return True
+        msg = False
+        [user]    = self.pool.get('res.users').browse(cr, uid, [uid]) 
+        empresa   = self.pool.get('res.company').browse(cr, uid, user.company_id.id, context=context) 
+        mypartner = self.pool.get('res.partner').browse(cr, uid, empresa.partner_id.id, context=context)       
+        for invoice in self.pool.get('account.invoice').browse(cr, uid, invoice_ids):
+            if invoice.state != 'sefaz_export':
+                msg = u"A fatura precisa estar nos estado de envio a Receita [fatura:"+str(invoice.internal_number)+"]"
+            elif invoice.nro_nfse and invoice.nro_nfse > 0:
+                msg = u"A Fatura já foi emitida [fatura:"+str(invoice.internal_number)+"]"
+            elif invoice.company_id.id != empresa.id:
+                msg = u"A empresa na Fatura é diferente da sua empresa.[fatura:"+str(invoice.internal_number)+"]"
+            elif invoice.partner_id.street:
+                msg = u"Informe o endereço do cliente.[fatura:"+str(invoice.internal_number)+"]"
+            elif invoice.partner_id.cnpj_cpf:
+                msg = u"Informe o CNPJ / CPF do cliente.[fatura:"+str(invoice.internal_number)+"]"
+            elif invoice.partner_id.legal_name:
+                msg = u"Informe a Razão Social do cliente.[fatura:"+str(invoice.internal_number)+"]"
+            elif invoice.partner_id.l10n_br_city_id:
+                msg = u"Informe a Cidade do Cliente.[fatura:"+str(invoice.internal_number)+"]"
+            elif invoice.partner_id.l10n_br_city_id.ibge_code:
+                msg = u"Informe o Código IBGE da Cidade do Cliente.[fatura:"+str(invoice.internal_number)+"]"
+            elif invoice.partner_id.state_id:
+                msg = u"Informe a UF do Cliente.[fatura:"+str(invoice.internal_number)+"]"
+            elif invoice.partner_id.state_id.ibge_code:
+                msg = u"Informe o Código IBGE da Cidade do Cliente.[fatura:"+str(invoice.internal_number)+"]"
+            elif invoice.partner_id.state_id.ibge_code:
+                msg = u"Informe o Código IBGE do Estado do Cliente.[fatura:"+str(invoice.internal_number)+"]"
+            elif mypartner.inscr_mun:
+                msg = u"Informe a inscrição municipal da sua empresa"
+            elif mypartner.cnpj_cpf:
+                msg = u"Informe o CNPJ da sua Empresa"
+            elif mypartner.l10n_br_city_id.ibge_code:
+                msg = u"Informe o Código IBGE da Cidade da Sua Empresa"
+            elif mypartner.state_id.ibge_code:
+                msg = u"Informe o Código IBGE do Estado da Sua Empresa"
+
+        return msg 
 
     _columns = {
                 'name': fields.char('Lote', 30, readonly=True),
