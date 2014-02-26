@@ -534,29 +534,29 @@ class loterps(osv.osv):
                 msg = u"A Fatura já foi emitida [fatura:"+str(invoice.internal_number)+"]"
             elif invoice.company_id.id != empresa.id:
                 msg = u"A empresa na Fatura é diferente da sua empresa.[fatura:"+str(invoice.internal_number)+"]"
-            elif invoice.partner_id.street:
+            elif not invoice.partner_id.street:
                 msg = u"Informe o endereço do cliente.[fatura:"+str(invoice.internal_number)+"]"
-            elif invoice.partner_id.cnpj_cpf:
+            elif not invoice.partner_id.cnpj_cpf:
                 msg = u"Informe o CNPJ / CPF do cliente.[fatura:"+str(invoice.internal_number)+"]"
-            elif invoice.partner_id.legal_name:
+            elif not invoice.partner_id.legal_name:
                 msg = u"Informe a Razão Social do cliente.[fatura:"+str(invoice.internal_number)+"]"
-            elif invoice.partner_id.l10n_br_city_id:
+            elif not invoice.partner_id.l10n_br_city_id:
                 msg = u"Informe a Cidade do Cliente.[fatura:"+str(invoice.internal_number)+"]"
-            elif invoice.partner_id.l10n_br_city_id.ibge_code:
+            elif not invoice.partner_id.l10n_br_city_id.ibge_code:
                 msg = u"Informe o Código IBGE da Cidade do Cliente.[fatura:"+str(invoice.internal_number)+"]"
-            elif invoice.partner_id.state_id:
+            elif not invoice.partner_id.state_id:
                 msg = u"Informe a UF do Cliente.[fatura:"+str(invoice.internal_number)+"]"
-            elif invoice.partner_id.state_id.ibge_code:
+            elif not invoice.partner_id.state_id.ibge_code:
                 msg = u"Informe o Código IBGE da Cidade do Cliente.[fatura:"+str(invoice.internal_number)+"]"
-            elif invoice.partner_id.state_id.ibge_code:
+            elif not invoice.partner_id.state_id.ibge_code:
                 msg = u"Informe o Código IBGE do Estado do Cliente.[fatura:"+str(invoice.internal_number)+"]"
-            elif mypartner.inscr_mun:
+            elif not mypartner.inscr_mun:
                 msg = u"Informe a inscrição municipal da sua empresa"
-            elif mypartner.cnpj_cpf:
+            elif not mypartner.cnpj_cpf:
                 msg = u"Informe o CNPJ da sua Empresa"
-            elif mypartner.l10n_br_city_id.ibge_code:
+            elif not mypartner.l10n_br_city_id.ibge_code:
                 msg = u"Informe o Código IBGE da Cidade da Sua Empresa"
-            elif mypartner.state_id.ibge_code:
+            elif not mypartner.state_id.ibge_code:
                 msg = u"Informe o Código IBGE do Estado da Sua Empresa"
 
         return msg 
