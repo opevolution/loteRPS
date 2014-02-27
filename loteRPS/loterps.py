@@ -314,10 +314,9 @@ class loterps(osv.osv):
             cpCNPToma  = deepcopy(CNPToma)
             cpEndToma  = deepcopy(EndToma)
             cpConToma  = deepcopy(conToma)
-
             
             cpInfNFSE = {
-                    'DataEmissao'               : datetime.strptime(invoice.date_due, '%Y-%m-%d').strftime('%d/%m/%Y'),
+                    'DataEmissao'               : datetime.strptime(invoice.date_due, '%Y-%m-%d').strftime('%Y-%m-%d'),
                     'NaturezaOperacao'          : str(pFiscal.code or ''),
                     'OptanteSimplesNacional'    : vlTpFiscal,
                     'IncentivadorCultural'      : '2',
