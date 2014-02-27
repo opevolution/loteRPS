@@ -21,7 +21,7 @@
 ###############################################################################
 {   
     'name'          : 'Emissão de Lote de R.P.S. para a prefeitura de Curitiba/PR',
-    'version'       : '0.008',
+    'version'       : '0.016',
     'author'        : 'Alexandre Defendi @ Open Evoluir',
     'website'       : 'www.evoluirinformatica.com.br',
     'category'      : 'Account',

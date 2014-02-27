@@ -22,7 +22,8 @@
 					
 	                <header>
 						<button name="emite_rps" string="Confirmar" type="object" class="oe_highlight"  attrs="{'invisible' : [('state','!=','draft')]}"/>
-						<button name="reemite_rps" string="Reemite" type="object" class="oe_highlight"  attrs="{'invisible' : [('state','!=','done')]}"/>
+						<button name="reemite_rps" string="Reemite Lote" type="object" class="oe_highlight"  attrs="{'invisible' : [('state','!=','done')]}"/>
+						<button name="regera_rps" string="Novo Arquivo" type="object" class="oe_highlight"  attrs="{'invisible' : [('state','!=','done')]}"/>
 						<field name="state" widget="statusbar" statusbar_visible="draft,done,cancel" statusbar_colors='{"draft":"blue","cancel":"red"}'/>
 	                </header>
 					<group col="4">
@@ -48,6 +49,14 @@
 			<field name="res_model">loterps</field>
 		</record>
 
+		<record model="ir.actions.act_window" id="action_res_country_state">
+			<field name="name">Act Estado</field>
+			<field name="res_model">res.country.state</field>
+		</record>
+
 		<menuitem name="Recibo Prov.Serv." id="menu_sped_loterps" action="action_loterps_tree" parent="menu_sped_root"/>
+		
+		<menuitem name="Estados" id="menu_action_res_country_state_form" parent="l10n_br_account.menu_l10n_br_account_fiscal_manager" action="action_res_country_state"/>
+		<menuitem name="Municípios" id="menu_action_lote_l10n_br_base_city_form" parent="l10n_br_account.menu_l10n_br_account_fiscal_manager" action="l10n_br_base.action_l10n_br_base_city_form"/>
 	</data>
 </openerp>

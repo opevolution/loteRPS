@@ -58,8 +58,8 @@ class cria_rps(osv.osv_memory):
         obLoterps = self.pool.get('loterps')
          
         _logger.info("Inciando a Geração das RPS")
-
-        result = obLoterps.verifica_rps(cr, uid, active_ids, context)
+        
+        result = obLoterps.verifica_rps(cr, uid, active_ids, reemissao=False, context=context)
         
         if result:
             raise osv.except_osv(_('warning'), _(result))

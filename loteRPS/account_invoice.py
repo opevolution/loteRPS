@@ -28,11 +28,13 @@ class account_invoice(orm.Model):
     _inherit = 'account.invoice'
     _order = "number asc"
 
+
     def invoice_confirmada(self, cr, uid, ids, context=None):
         self.write(cr, uid, ids, {'state':'sefaz_export'}, context=context)
         return True
 
     _columns = {
+                'internal_number': fields.char('Invoice Number', size=32, readonly=True, states={'draft':[('readonly',False)]}, help="Unique number of the invoice, computed automatically when the invoice is created."),
                 'nro_nfse': fields.integer('Nro. NFS-e'),
                 'loterps_id': fields.many2one('loterps', 'Lote RPS',),
                }
