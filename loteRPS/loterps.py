@@ -253,7 +253,7 @@ class loterps(osv.osv):
             
             _logger.info("Linhas Taxas: "+str(invoice.tax_line))
             
-            
+             
             for idLinhaImp in invoice.tax_line:
                 [LinhaImp] = self.pool.get('account.invoice.tax').browse(cr, uid, [idLinhaImp.id])
                 if vlTpFiscal == '2':
@@ -263,27 +263,29 @@ class loterps(osv.osv):
                             vlISSQN = vlISSQN + LinhaImp.amount
                             alISSQN = round(vlISSQN / vlBase,2) * 100
                         elif LinhaImp.amount < 0:
-                            vlISSQNRet = vlISSQNRet + LinhaImp.amount
+                            vlISSQNRet = vlISSQNRet + (LinhaImp.amount * (-1))
                     elif 'CSLL' in LinhaImp.name:
                         if LinhaImp.amount > 0:
                             vlCSLL = vlCSLL + LinhaImp.amount
                         elif LinhaImp.amount < 0:
-                            vlCSLLRet = vlCSLLRet + (LinhaImp.amount * -1)
+                            vlCSLLRet = vlCSLLRet + (LinhaImp.amount * (-1))
                     elif 'IR' in LinhaImp.name:
                         if LinhaImp.amount > 0:
                             vlIR = vlIR + LinhaImp.amount
                         elif LinhaImp.amount < 0:
-                            vlIRRet = vlIRRet + (LinhaImp.amount * -1)
+                            vlIRRet = vlIRRet + (LinhaImp.amount * (-1))
                     elif 'PIS' in LinhaImp.name:
                         if LinhaImp.amount > 0:
                             vlPIS = vlPIS + LinhaImp.amount
                         elif LinhaImp.amount < 0:
-                            vlPISRet = vlPISRet + (LinhaImp.amount * -1)
+                            vlPISRet = vlPISRet + (LinhaImp.amount * (-1))
                     elif 'COFINS' in LinhaImp.name:
                         if LinhaImp.amount > 0:
                             vlCOFINS = vlCOFINS + LinhaImp.amount
                         elif LinhaImp.amount < 0:
-                            vlCOFINSRet = vlCOFINSRet + (LinhaImp.amount * -1)
+                            vlCOFINSRet = vlCOFINSRet + (LinhaImp.amount * (-1))
+            
+            vlTotOutRet = vlCSLLRet + vlIRRet + vlPISRet + vlCOFINSRet
                     
             if Log == True:
                 _logger.info("vlServicoPrestado: "+str(vlServicoPrestado))
@@ -314,10 +316,9 @@ class loterps(osv.osv):
             cpCNPToma  = deepcopy(CNPToma)
             cpEndToma  = deepcopy(EndToma)
             cpConToma  = deepcopy(conToma)
-
             
             cpInfNFSE = {
-                    'DataEmissao'               : datetime.strptime(invoice.date_due, '%Y-%m-%d').strftime('%d/%m/%Y'),
+                    'DataEmissao'               : datetime.strptime(invoice.date_due, '%Y-%m-%d').strftime('%Y-%m-%d'),
                     'NaturezaOperacao'          : str(pFiscal.code or ''),
                     'OptanteSimplesNacional'    : vlTpFiscal,
                     'IncentivadorCultural'      : '2',
@@ -363,8 +364,16 @@ class loterps(osv.osv):
                 alISSQN = 0
                 tpISS = 2
             
-            OutrasRet = vlPISRet+vlCOFINSRet+vlIRRet+vlCSLLRet
-            
+#             OutrasRet = vlPISRet+vlCOFINSRet+vlIRRet+vlCSLLRet
+# 
+#              vlServicoPrestado = round(LinhaInv.quantity * LinhaInv.price_unit, 2)
+#             
+#             vlDescontos = round(vlServicoPrestado * (LinhaInv.discount/100),2)
+#             
+#             vlDeducao = 0
+#             
+#             vlBase = vlServicoPrestado - vlDescontos
+           
             cpValServNFSE = {
                            'ValorServicos': converte_valor_xml(vlServicoPrestado),
                            'ValorDeducoes': '0.00',
