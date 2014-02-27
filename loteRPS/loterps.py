@@ -30,6 +30,7 @@ import time
 from lxml import etree
 from copy import deepcopy
 from osv import fields, osv
+from datetime import datetime
 from openerp.tools.translate import _
 
 CABECALHO_XML = '<?xml version="1.0"?>'
@@ -68,11 +69,6 @@ def limpa_cnpj_cpf(cnpj):
     res = res.replace("/","")
     res = res.replace("-","")
     return res
-
-def recursively_empty(e):
-    if e.text:
-        return False
-    return all((recursively_empty(c) for c in e.iterchildren()))
 
 class loterps(osv.osv):
     """Lote de Recibo Provisório de Serviços"""
@@ -118,6 +114,13 @@ class loterps(osv.osv):
                                                 }, context=context)
         return True
 
+    def clear_items(self, root):
+        for child in root:
+            if len(child):
+                self.clear_items(child)
+            elif not child.text: 
+                child.getparent().remove(child)
+ 
     def gera_arquivo_xml(self, cr, uid, invoice_ids, nrLote, SeqId, context=None):
         """
         Função que gera o arquivo xml para exportar
@@ -314,13 +317,15 @@ class loterps(osv.osv):
 
             
             cpInfNFSE = {
-                    'DataEmissao'               : str(invoice.date_invoice or ''),
+                    'DataEmissao'               : datetime.strptime(invoice.date_due, '%Y-%m-%d').strftime('%d/%m/%Y'),
                     'NaturezaOperacao'          : str(pFiscal.code or ''),
                     'OptanteSimplesNacional'    : vlTpFiscal,
                     'IncentivadorCultural'      : '2',
                     'Status'                    : '1',
                     } 
             preenche(cpInfRps, cpInfNFSE)
+            
+            
 
             idNFSE = False
             
@@ -416,7 +421,8 @@ class loterps(osv.osv):
                                }
 
             preenche(cpCNPToma, cpCNPTomaNFSE)
-
+            #self.clear_items(cpCNPToma)
+            
             cpConTomaNFSE = {
                            'Telefone': partner.phone or '',
                            'Email': partner.email or '',
@@ -441,8 +447,8 @@ class loterps(osv.osv):
         var['InscricaoMunicipal'] = mypartner.inscr_mun or '' 
         var['QuantidadeRps'] = str(qtdeRPS)
         preenche(loteRps, var)
+        self.clear_items(EnviarLote)
  
-        recursively_empty(EnviarLote)
         
         res = {'arquivo': CABECALHO_XML + etree.tostring(EnviarLote)}
         return res
