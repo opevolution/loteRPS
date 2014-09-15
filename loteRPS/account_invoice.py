@@ -37,6 +37,17 @@ class account_invoice(orm.Model):
                 'internal_number': fields.char('Invoice Number', size=32, readonly=True, states={'draft':[('readonly',False)]}, help="Unique number of the invoice, computed automatically when the invoice is created."),
                 'nro_nfse': fields.integer('Nro. NFS-e'),
                 'loterps_id': fields.many2one('loterps', 'Lote RPS',),
+                'nat_operacao': fields.selection([
+                        ('no_munic',u'1-Trib.Município'),
+                        ('fora_munic',u'2-Trib.Município'),
+                        ('isento',u'3-Isenção'),
+                        ('imune',u'4-Imune'),
+                        ('susp_judi',u'5-Susp.Decisão Judicial'),
+                        ('susp_adm',u'6-Susp.Proc.Administrativo')], 'Nat.Operação', required=True,),
                }
+
+    _defaults = {
+                 'nat_operacao': 'no_munic',
+                }
 
 account_invoice()

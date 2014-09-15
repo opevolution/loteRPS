@@ -224,6 +224,22 @@ class loterps(osv.osv):
 #            if Log:
 #                _logger.info("Servico: "+str(ServId.name))
            
+            iNatureza = 1
+            if invoice.nat_operacao:
+                if invoice.nat_operacao == 'no_munic': 
+                    iNatureza = 1
+                if invoice.nat_operacao == 'fora_munic': 
+                    iNatureza = 2
+                if invoice.nat_operacao == 'isento': 
+                    iNatureza = 3
+                if invoice.nat_operacao == 'imune': 
+                    iNatureza = 4
+                if invoice.nat_operacao == 'susp_judi': 
+                    iNatureza = 5
+                if invoice.nat_operacao == 'susp_adm': 
+                    iNatureza = 6
+            _logger.info("Natureza do Serviço: "+str(invoice.nat_operacao)+' ID: '+str(iNatureza))
+
             iTpServ = self.pool.get('l10n_br_account.service.type').browse(cr, uid, ServInv.service_type_id.id, context=context)
             
             idTipoServico = ''
