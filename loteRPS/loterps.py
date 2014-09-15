@@ -339,7 +339,7 @@ class loterps(osv.osv):
             
             cpInfNFSE = {
                     'DataEmissao'               : date.today().strftime('%Y-%m-%d'),
-                    'NaturezaOperacao'          : str(pFiscal.code or ''),
+                    'NaturezaOperacao'          : iNatureza,
                     'OptanteSimplesNacional'    : vlTpFiscal,
                     'IncentivadorCultural'      : '2',
                     'Status'                    : '1',
