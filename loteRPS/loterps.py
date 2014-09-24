@@ -168,8 +168,12 @@ class loterps(osv.osv):
         
         MyCidadeCode = mypartner.l10n_br_city_id.state_id.ibge_code+mypartner.l10n_br_city_id.ibge_code
        
-        tpFiscal  = self.pool.get('l10n_br_account.partner.fiscal.type').browse(cr, uid, mypartner.partner_fiscal_type_id.id, context=context)
-         
+        _logger.info("Tipo Fiscal do parceiro: "+str(mypartner.partner_fiscal_type_id.id))
+       
+        [tpFiscal]  = self.pool.get('l10n_br_account.partner.fiscal.type').browse(cr, uid, [mypartner.partner_fiscal_type_id.id], context=None)
+        
+        _logger.info("Tipo Fiscal: "+str(tpFiscal.code))
+
         if tpFiscal.code == 'Simples Nacional':
             vlTpFiscal = '1'
         else:
@@ -619,54 +623,79 @@ class loterps(osv.osv):
 
     def verifica_rps(self, cr, uid, invoice_ids, reemissao=False, context=None):
         msg = False
+        nrInvoice = ''
         [user]    = self.pool.get('res.users').browse(cr, uid, [uid]) 
         empresa   = self.pool.get('res.company').browse(cr, uid, user.company_id.id, context=context) 
         mypartner = self.pool.get('res.partner').browse(cr, uid, empresa.partner_id.id, context=context)       
         for invoice in self.pool.get('account.invoice').browse(cr, uid, invoice_ids):
+            if invoice.internal_number:
+                msgFat = ""
+                nrInvoice = 'Fatura '+str(invoice.internal_number)
+                if not invoice.internal_number.isdigit():
+                    msgFat = msgFat + '* Número de Fatura Inválido;\n'
+            else:
+                msgFat = '* Fatura sem Número Interno;\n'
+                nrInvoice = 'Fatura S/N'
+                
             if len(invoice.invoice_line) != 1:
-                msg = u"A fatura precisa ter 1 item [fatura:"+str(invoice.internal_number)+"]\n"
+                msgFat = u"* A fatura precisa ter 1 item;\n"
             else:
                 idLine = invoice.invoice_line[0]
                 LinhaInv = self.pool.get('account.invoice.line').browse(cr, uid, idLine.id, context=context)  
                 ServId = LinhaInv.product_id
                 ServInv = self.pool.get('product.product').browse(cr, uid, ServId.id, context=context)
-                iTpServ = self.pool.get('l10n_br_account.service.type').browse(cr, uid, ServInv.service_type_id.id, context=context)
-                if iTpServ:
-                    idTipoServico = iTpServ.code or ''
-                    idTipoServico = idTipoServico.replace(".","")
-                    if (len(idTipoServico) < 0) or (len(idTipoServico) > 4):
-                        msg = u"O serviço precisa ter no seu cadastro a indicação de tipo de serviço. [fatura:"+str(invoice.internal_number)+"]\n"
+                if ServInv.service_type_id.id:
+                    _logger.info(u'Serviço: '+str(ServInv.service_type_id.id))
+                    iTpServ = self.pool.get('l10n_br_account.service.type').browse(cr, uid, ServInv.service_type_id.id, context=context)
+                    _logger.info(u'Tipo Serviço ID: '+str(iTpServ.code))
+                    if iTpServ:
+                        idTipoServico = str(iTpServ.code) or ''
+                        idTipoServico = idTipoServico.replace(".","")
+                        if (len(idTipoServico) < 0) or (len(idTipoServico) > 4):
+                            msgFat = u"* O código do Tipo de serviço é inválido;\n"
+                    else:
+                        msgFat = u"* O tipo de serviço precisa estar devidamente preenchido no cadastro de tipo de serviço;\n"
                 else:
-                    msg = u"O serviço precisa ter no seu cadastro a indicação de tipo de serviço. [fatura:"+str(invoice.internal_number)+"]\n"
-
+                    msgFat = u"* * O serviço precisa ter no seu cadastro a indicação de tipo de serviço;\n"
             if (invoice.state != 'sefaz_export') and (not reemissao):
-                msg = msg + u"A fatura precisa estar nos estado de envio a Receita [fatura:"+str(invoice.internal_number)+"]\n"
+                msgFat = msgFat + u"* A fatura precisa estar nos estado de envio a Receita;\n"
             if invoice.company_id.id != empresa.id:
-                msg = msg + u"A empresa na Fatura é diferente da sua empresa.[fatura:"+str(invoice.internal_number)+"]\n"
+                msgFat = msgFat + u"* A empresa na Fatura é diferente da sua empresa;\n"
             if not invoice.partner_id.street:
-                msg = msg + u"Informe o endereço do cliente.[fatura:"+str(invoice.internal_number)+"]\n"
+                msgFat = msgFat + u"* Informe o endereço do cliente;\n"
             if not invoice.partner_id.cnpj_cpf:
-                msg = msg + u"Informe o CNPJ / CPF do cliente.[fatura:"+str(invoice.internal_number)+"]\n"
+                msgFat = msgFat + u"* Informe o CNPJ / CPF do cliente;\n"
             if not invoice.partner_id.legal_name:
-                msg = msg + u"Informe a Razão Social do cliente.[fatura:"+str(invoice.internal_number)+"]\n"
+                msgFat = msgFat + u"* Informe a Razão Social do cliente;\n"
             if not invoice.partner_id.l10n_br_city_id:
-                msg = msg + u"Informe a Cidade do Cliente.[fatura:"+str(invoice.internal_number)+"]\n"
+                msgFat = msgFat + u"* Informe a Cidade do Cliente;\n"
             if not invoice.partner_id.l10n_br_city_id.ibge_code:
-                msg = msg + u"Informe o Código IBGE da Cidade do Cliente.[fatura:"+str(invoice.internal_number)+"]\n"
+                msgFat = msgFat + u"* Informe o Código IBGE da Cidade do Cliente;\n"
             if not invoice.partner_id.state_id:
-                msg = msg + u"Informe a UF do Cliente.[fatura:"+str(invoice.internal_number)+"]\n"
+                msgFat = msgFat + u"* Informe a UF do Cliente;\n"
             if not invoice.partner_id.state_id.ibge_code:
-                msg = msg + u"Informe o Código IBGE da Cidade do Cliente.[fatura:"+str(invoice.internal_number)+"]\n"
+                msgFat = msgFat + u"* Informe o Código IBGE da Cidade do Cliente;\n"
             if not invoice.partner_id.state_id.ibge_code:
-                msg = msg + u"Informe o Código IBGE do Estado do Cliente.[fatura:"+str(invoice.internal_number)+"]\n"
+                msgFat = msgFat + u"* Informe o Código IBGE do Estado do Cliente;\n"
             if not mypartner.inscr_mun:
-                msg = msg + u"Informe a inscrição municipal da sua empresa\n"
+                msgFat = msgFat + u"* Informe a inscrição municipal da sua empresa;\n"
             if not mypartner.cnpj_cpf:
-                msg = msg + u"Informe o CNPJ da sua Empresa"
+                msgFat = msgFat + u"* Informe o CNPJ da sua Empresa;\n"
             if not mypartner.l10n_br_city_id.ibge_code:
-                msg = msg + u"Informe o Código IBGE da Cidade da Sua Empresa\n"
+                msgFat = msgFat + u"* Informe o Código IBGE da Cidade da Sua Empresa;\n"
             if not mypartner.state_id.ibge_code:
-                msg = msg + u"Informe o Código IBGE do Estado da Sua Empresa\n"
+                msgFat = msgFat + u"* Informe o Código IBGE do Estado da Sua Empresa;\n"
+            if not mypartner.partner_fiscal_type_id.id:
+                msgFat = msgFat + u"* Informe o Tipo Fiscal da Sua Empresa;\n"
+                
+            if invoice.partner_id.number:
+                if not invoice.partner_id.number.isdigit():
+                    msgFat = msgFat + u"* Número do Imóvel do Cliente é inválido [%s];\n" % invoice.partner_id.number
+            if msgFat != "":
+                if msg:
+                    msg = msg + '\n' + nrInvoice + '\n' + msgFat
+                else:
+                    msg = nrInvoice + '\n' + msgFat
 
         return msg 
 

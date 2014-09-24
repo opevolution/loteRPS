@@ -69,16 +69,19 @@ class cria_rps(osv.osv_memory):
 
         serie_pool = self.pool.get('l10n_br_account.document.serie')
         [user] = self.pool.get('res.users').browse(cr, uid, [uid])
-        [company] = self.pool.get('res.company').browse(cr, user.id, [user.company_id.id])
-                
-        serie_id = serie_pool.search(cr, uid, [('code','=','NFS'),('company_id','=',user.company_id.id)])[0]
-        _logger.info("Series IDS: "+str(serie_id))
+        _logger.info("Empresa ID: "+str(user.company_id))
+        serie_id = False
+        if user.company_id:        
+            company = self.pool.get('res.company').browse(cr, user.id, user.company_id.id)
+        
+            serie_id = serie_pool.search(cr, uid, [('code','=','NFS'),('company_id','=',company.id)])
         
         if not serie_id:
             raise osv.except_osv(_('warning'), _('Informe uma série para emitir NFS-e, nas configurações da empresa'))
             return False
         else:
-            [serie] = serie_pool.browse(cr, uid, [serie_id])
+            _logger.info("Serie ID: "+str(serie_id))
+            [serie] = serie_pool.browse(cr, uid, serie_id)
             if not serie.internal_sequence_id:
                 raise osv.except_osv(_('warning'), _('Crie uma sequencia para poder exportar RPS.'))
                 return False
